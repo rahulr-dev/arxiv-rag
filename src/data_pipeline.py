@@ -195,7 +195,12 @@ def filter_papers(
     papers: list[Paper],
     date_from: str,
     keywords: list[str],
+    is_landmark: bool = False,
 ) -> list[Paper]:
+    if is_landmark:
+        logger.info(f"Bypassing filters for {len(papers)} landmark papers")
+        return papers
+
     filtered = []
 
     for paper in papers:
@@ -352,6 +357,8 @@ def run_landmark_pipeline(
     """
     conn = init_db(db_path)
     papers = fetch_landmark_papers(arxiv_ids)
+    # Ensure landmark papers bypass regular filtering
+    papers = filter_papers(papers, date_from="1900-01-01", keywords=[], is_landmark=True)
 
     skipped = downloaded = failed = 0
 
@@ -391,11 +398,11 @@ if __name__ == "__main__":
     total_summary = {"downloaded": 0, "skipped": 0, "failed": 0}
 
     # ── Regular query-based fetch ──
-    for config in FETCH_CONFIGS:
-        result = run_pipeline(**config)
-        total_summary["downloaded"] += result["downloaded"]
-        total_summary["skipped"] += result["skipped"]
-        total_summary["failed"] += result["failed"]
+    # for config in FETCH_CONFIGS:
+    #     result = run_pipeline(**config)
+    #     total_summary["downloaded"] += result["downloaded"]
+    #     total_summary["skipped"] += result["skipped"]
+    #     total_summary["failed"] += result["failed"]
 
     # ── Landmark papers fetch ──
     landmark_result = run_landmark_pipeline(arxiv_ids=LANDMARK_PAPERS)

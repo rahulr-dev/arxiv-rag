@@ -1,5 +1,7 @@
 .venv
-env
+.env
 __pycache__
 data
 qdrant_storage
+.gemini
+GEMINI.md
