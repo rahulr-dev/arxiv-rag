@@ -215,10 +215,11 @@ def filter_papers(
             continue
 
         # Keyword match in title or abstract
-        text = (paper.title + " " + paper.abstract).lower()
-        if not any(kw.lower() in text for kw in keywords):
-            logger.info(f"[FILTER] {paper.arxiv_id} — no keyword match")
-            continue
+        if keywords:
+            text = (paper.title + " " + paper.abstract).lower()
+            if not any(kw.lower() in text for kw in keywords):
+                logger.info(f"[FILTER] {paper.arxiv_id} — no keyword match")
+                continue
 
         filtered.append(paper)
 

@@ -6,69 +6,81 @@ import json
 
 API_URL = "http://localhost:8000/query"
 
-st.set_page_config(
-    page_title="ArXiv RAG Explorer",
-    page_icon="📚",
-    layout="wide"
-)
+st.set_page_config(page_title="ArXiv AI Assistant", layout="centered")
+
+# ── Main Title ────────────────────────────────────────────────────────────────
+
+st.markdown("# **ArXiv AI Assistant**")
+st.markdown("---")
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
-st.sidebar.title("📚 ArXiv RAG Settings")
-st.sidebar.markdown("---")
-top_k = st.sidebar.slider("Number of chunks to retrieve", min_value=1, max_value=10, value=5)
-st.sidebar.info(
-    "This explorer uses a hybrid search (Dense + Sparse) and a "
-    "Cross-Encoder reranker to find the most relevant snippets from "
-    "scientific papers."
-)
+with st.sidebar:
+    st.title("ArXiv Agent")
+    st.markdown("---")
+    st.markdown("""
+    ### About
+    This is an agentic RAG assistant specialized in ArXiv research papers.
 
-# ── Main UI ───────────────────────────────────────────────────────────────────
+    **Capabilities:**
+    - 🔍 **Search**: Queries the local vector database.
+    - 📥 **Ingest**: Fetches and indexes new papers from ArXiv.
+    - 🌐 **Web**: Falls back to web search for general queries.
+    """)
 
-st.title("ArXiv Research Assistant")
-st.markdown(
-    "Ask a question about Machine Learning, RAG, or Large Language Models "
-    "based on the papers in our database."
-)
+    if st.button("Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
-query = st.text_input("Enter your question:", placeholder="e.g., How does the attention mechanism improve transformers?")
+# ── Chat Logic ────────────────────────────────────────────────────────────────
 
-if st.button("Query Pipeline") or (query and st.session_state.get('last_query') != query):
-    if not query:
-        st.warning("Please enter a question.")
-    else:
-        st.session_state['last_query'] = query
-        
-        with st.spinner("Retrieving sources and generating answer..."):
-            try:
-                payload = {"query": query, "top_k": top_k}
-                response = requests.post(API_URL, json=payload, timeout=60)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    # 1. Display Answer
-                    st.subheader("🤖 Assistant's Answer")
-                    st.markdown(data["answer"])
-                    
-                    st.markdown("---")
-                    
-                    # 2. Display Sources
-                    st.subheader("📄 Referenced Sources")
-                    for i, source in enumerate(data["sources"]):
-                        with st.expander(f"[{i+1}] {source['title']} (Score: {source['score']:.4f})"):
-                            st.markdown(f"**Authors:** {source['authors']}")
-                            st.markdown(f"**Snippet:**\n> {source['text']}")
-                            if source.get("pdf_url"):
-                                st.link_button("View Paper", source["pdf_url"])
-                else:
-                    st.error(f"API Error ({response.status_code}): {response.text}")
-                    
-            except requests.exceptions.ConnectionError:
-                st.error("Could not connect to the API. Make sure the FastAPI server is running at localhost:8000.")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {e}")
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# ── Footer ────────────────────────────────────────────────────────────────────
-st.markdown("---")
-st.caption("Powered by SPECTER2, Qdrant, and Google Gemini.")
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# React to user input
+if prompt := st.chat_input("Ask about machine learning research..."):
+    # Display user message in chat message container
+    st.chat_message("user").markdown(prompt)
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        message_placeholder.markdown("🔍 *Thinking...*")
+
+        try:
+            # Call API
+            payload = {"query": prompt}
+            # We use a long timeout because dynamic ingestion can take 30s+
+            response = requests.post(API_URL, json=payload, timeout=120)
+
+            if response.status_code == 200:
+                answer = response.json()["answer"]
+                message_placeholder.markdown(answer)
+                # Add assistant response to chat history
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": answer}
+                )
+            else:
+                error_msg = (
+                    f"Error: Received status code {response.status_code} from API."
+                )
+                message_placeholder.markdown(error_msg)
+                st.error(response.text)
+
+        except requests.exceptions.ConnectionError:
+            error_msg = "Error: Could not connect to the API. Please ensure the FastAPI server is running."
+            message_placeholder.markdown(error_msg)
+        except Exception as e:
+            error_msg = f"An unexpected error occurred: {e}"
+            message_placeholder.markdown(error_msg)
+
+# # ── Footer ────────────────────────────────────────────────────────────────────
+# st.markdown("---")
+# st.caption("ArXiv RAG Assistant | 2026")

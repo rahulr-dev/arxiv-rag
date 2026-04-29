@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 
+from typing import Optional
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
 from qdrant_client import QdrantClient, models
@@ -30,6 +31,8 @@ COLLECTION_NAME = "arxiv_papers"
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", None)
 
+from src.embedding import get_qdrant_client
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
@@ -38,8 +41,8 @@ logger = logging.getLogger(__name__)
 # ── Retrieval Engine ──────────────────────────────────────────────────────────
 
 class RetrievalEngine:
-    def __init__(self):
-        self.client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+    def __init__(self, client: Optional[QdrantClient] = None):
+        self.client = client or get_qdrant_client()
         
         logger.info(f"Loading dense encoder: {DENSE_MODEL}")
         self.dense_model = SentenceTransformer(DENSE_MODEL)

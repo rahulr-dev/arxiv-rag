@@ -107,8 +107,21 @@ def fetch_all_chunks(conn: sqlite3.Connection) -> list[ChunkRecord]:
 
 
 def get_qdrant_client() -> QdrantClient:
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-    logger.info(f"Connected to Qdrant at {QDRANT_URL}")
+    if "localhost" in QDRANT_URL:
+        # Check if server is actually up
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            try:
+                s.connect(("localhost", 6333))
+                client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+                logger.info(f"Connected to Qdrant server at {QDRANT_URL}")
+            except:
+                logger.info("Local Qdrant server not found. Using embedded mode with path='qdrant_storage'")
+                client = QdrantClient(path="qdrant_storage")
+    else:
+        client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+        logger.info(f"Connected to Qdrant at {QDRANT_URL}")
     return client
 
 
