@@ -15,8 +15,8 @@ ddgs
 sentence-transformers>=3.0.1
 qdrant-client>=1.9.1
 rank-bm25==0.2.2
-torch==2.10.0+cu130
-torchvision==0.25.0+cu130
+torch>=2.0.0
+torchvision>=0.15.0
 google-generativeai
 fastapi
 uvicorn

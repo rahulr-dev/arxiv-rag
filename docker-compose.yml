@@ -1,0 +1,44 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: arxiv-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: arxiv-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000
+    restart: always
+
+  ui:
+    build: .
+    container_name: arxiv-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000/query
+    depends_on:
+      - api
+    command: streamlit run src/ui.py --server.port 8501 --server.address 0.0.0.0
+    restart: always

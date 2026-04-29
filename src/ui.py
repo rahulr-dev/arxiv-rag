@@ -1,10 +1,11 @@
+import os
 import streamlit as st
 import requests
 import json
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-API_URL = "http://localhost:8000/query"
+API_URL = os.getenv("API_URL", "http://localhost:8000/query")
 
 st.set_page_config(page_title="ArXiv AI Assistant", layout="centered")
 

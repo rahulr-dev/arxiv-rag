@@ -1,0 +1,15 @@
+data/
+qdrant_storage/
+.venv/
+.git/
+.gitignore
+.env
+.gemini/
+__pycache__/
+*.pyc
+Dockerfile
+docker-compose.yml
+README.md
+notebooks/
+artifacts/
+*.md
