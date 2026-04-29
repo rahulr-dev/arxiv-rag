@@ -1,4 +1,4 @@
-# ArXiv Agentic RAG
+# ArXiv Semantic Search Engine
 
 A modular Retrieval-Augmented Generation (RAG) system that uses an AI agent to navigate scientific research. Unlike static RAG, this system can autonomously decide to fetch and index new papers from ArXiv if the local database doesn't have the answer.
 
